@@ -1,39 +1,74 @@
-# NetTriage AI - Network Incident Triage Assistant
+#  NetTriage AI – Network Incident Triage Assistant
 
-NetTriage AI is a Python-based backend application designed for automated telecom network incident triage, alert correlation, RAG runbook recommendation, Gemini LLM reasoning, and Tier-3 escalation management.
+> Real-time alert correlation and automated telecom network incident triage system.
 
-## Project Structure
+NetTriage AI is a network operations assistant designed to help NOC operators analyze multiple network alerts, correlate related events, identify probable root causes, prioritize incidents, and recommend the next troubleshooting action.
 
-```
-nettriage-ai/
-├── app.py              # Main Flask application entry point
-├── requirements.txt    # Project dependencies
-├── README.md           # Documentation
-├── src/                # Core application logic and modules
-├── data/               # Raw and processed network alert data
-├── runbooks/           # SOPs and triage runbook documents
-└── frontend/           # Web interface assets and UI templates
-```
+---
 
-## Setup & Execution
+##  Live Demo
 
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+ https://nettriage-ai-tsq9.onrender.com
 
-2. Run the application:
-   ```bash
-   python app.py
-   ```
+---
 
-3. Access the assistant:
-   Open your browser and visit [http://localhost:8000](http://localhost:8000)
+##  Source Code
 
-## Roadmap
+ https://github.com/baladharshini14/nettriage-ai
 
-- [x] Step 1: Project setup & minimal Flask server
-- [ ] Step 2: Alert processing & incident grouping
-- [ ] Step 3: Runbook retrieval (RAG)
-- [ ] Step 4: Gemini embeddings & LLM reasoning integration
-- [ ] Step 5: Escalation workflow & dashboard UI
+---
+
+##  Problem Statement
+
+In telecom networks, a single network failure can generate multiple alerts from different devices.
+
+For example:
+
+- Link Down
+- High Latency
+- Device Unreachable
+- Authentication Failure
+- Power Failure
+
+Manually analyzing these alerts takes time and can create alert overload for NOC operators.
+
+The main challenge is:
+
+**Multiple Alerts → One Underlying Problem**
+
+NetTriage AI helps operators identify the relationship between alerts and consolidate them into meaningful network incidents.
+
+---
+
+## 💡 Solution
+
+NetTriage AI provides a centralized NOC dashboard that:
+
+1. Collects network alerts
+2. Correlates related alerts
+3. Groups alerts into incidents
+4. Identifies probable root causes
+5. Assigns incident priority
+6. Recommends troubleshooting actions
+7. Displays incident details
+8. Provides an AI Copilot for incident queries
+9. Supports real-time alert simulation
+
+---
+
+## ✨ Key Features
+
+### 🔗 Intelligent Alert Correlation
+
+Related alerts from the same device or related network conditions are grouped into a single incident.
+
+Example:
+
+```text
+LINK_DOWN
+     +
+HIGH_LATENCY
+     +
+AUTH_FAILURE
+     ↓
+Correlated Network Incident
