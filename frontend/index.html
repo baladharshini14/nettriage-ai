@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetTriage AI - Network Incident Triage Assistant</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        noc: {
+                            bg: '#0b0f19',
+                            card: '#111827',
+                            border: '#1f2937',
+                            hover: '#1f293d',
+                            accent: '#3b82f6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased bg-[#0b0f19] text-gray-100">
+
+    <!-- Toast Notification Overlay -->
+    <div id="toast-container" class="fixed top-20 right-6 z-50 flex flex-col space-y-2 pointer-events-none">
+        <!-- Dynamic Toast Messages Injected Here -->
+    </div>
+
+    <!-- Top Navigation Header -->
+    <header class="bg-[#111827] border-b border-gray-800 sticky top-0 z-30 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="h-9 w-9 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                        NetTriage AI
+                        <span class="text-xs font-medium px-2 py-0.5 rounded bg-blue-900/50 text-blue-300 border border-blue-700/50">Triage Desk</span>
+                    </h1>
+                    <p class="text-xs text-gray-400">Network Incident Triage Assistant</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <!-- Simulate New Alert Button -->
+                <button onclick="simulateNewAlert()" id="sim-btn-head" class="text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-all shadow-sm active:scale-95">
+                    <svg class="w-4 h-4 text-amber-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    ⚡ Simulate New Alert
+                </button>
+
+                <div class="flex items-center space-x-2 text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800/50 px-3 py-1.5 rounded-full">
+                    <span class="relative flex h-2 w-2">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span class="font-medium tracking-wide uppercase text-[11px]">NOC Live Feed</span>
+                </div>
+
+                <button onclick="fetchIncidents()" class="text-xs bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Title Banner -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-gradient-to-r from-gray-900 via-gray-900 to-gray-800 p-6 rounded-xl border border-gray-800 shadow-sm">
+            <div>
+                <h2 class="text-2xl font-bold text-white tracking-tight">NetTriage AI - Network Incident Triage Assistant</h2>
+                <p class="text-sm text-gray-400 mt-1">Real-time alert correlation engine & automated telecom root cause analyzer</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="simulateNewAlert()" class="text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-md active:scale-95">
+                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    ⚡ Simulate New Alert
+                </button>
+                <div class="text-right pl-3 border-l border-gray-800">
+                    <span class="text-xs text-gray-500">Last Synced</span>
+                    <div id="last-updated-time" class="text-xs font-semibold text-gray-300 mono">--:--:--</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metric Summary Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <!-- Total Incidents -->
+            <div class="bg-[#111827] border border-gray-800 rounded-xl p-4 flex flex-col justify-between hover:border-gray-700 transition-all">
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Active Incidents</span>
+                <div class="flex items-baseline justify-between mt-2">
+                    <span id="stat-total" class="text-3xl font-extrabold text-white mono">0</span>
+                    <span class="text-blue-400 bg-blue-950/60 p-1.5 rounded-lg border border-blue-800/40">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Critical -->
+            <div class="bg-[#111827] border border-red-900/40 rounded-xl p-4 flex flex-col justify-between hover:border-red-800/60 transition-all">
+                <span class="text-xs font-semibold text-red-400 uppercase tracking-wider">Critical</span>
+                <div class="flex items-baseline justify-between mt-2">
+                    <span id="stat-critical" class="text-3xl font-extrabold text-red-500 mono">0</span>
+                    <span class="text-red-400 bg-red-950/60 p-1.5 rounded-lg border border-red-800/40">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </span>
+                </div>
+            </div>
+
+            <!-- High -->
+            <div class="bg-[#111827] border border-amber-900/40 rounded-xl p-4 flex flex-col justify-between hover:border-amber-800/60 transition-all">
+                <span class="text-xs font-semibold text-amber-400 uppercase tracking-wider">High</span>
+                <div class="flex items-baseline justify-between mt-2">
+                    <span id="stat-high" class="text-3xl font-extrabold text-amber-500 mono">0</span>
+                    <span class="text-amber-400 bg-amber-950/60 p-1.5 rounded-lg border border-amber-800/40">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Medium -->
+            <div class="bg-[#111827] border border-yellow-900/40 rounded-xl p-4 flex flex-col justify-between hover:border-yellow-800/60 transition-all">
+                <span class="text-xs font-semibold text-yellow-400 uppercase tracking-wider">Medium</span>
+                <div class="flex items-baseline justify-between mt-2">
+                    <span id="stat-medium" class="text-3xl font-extrabold text-yellow-500 mono">0</span>
+                    <span class="text-yellow-400 bg-yellow-950/60 p-1.5 rounded-lg border border-yellow-800/40">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Low -->
+            <div class="bg-[#111827] border border-blue-900/40 rounded-xl p-4 flex flex-col justify-between hover:border-blue-800/60 transition-all">
+                <span class="text-xs font-semibold text-blue-400 uppercase tracking-wider">Low</span>
+                <div class="flex items-baseline justify-between mt-2">
+                    <span id="stat-low" class="text-3xl font-extrabold text-blue-400 mono">0</span>
+                    <span class="text-blue-400 bg-blue-950/60 p-1.5 rounded-lg border border-blue-800/40">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Split Grid: Table & Events Feed on Left (2/3), Copilot Chat on Right (1/3) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Left 2 Columns: Correlated Incidents Table & Recent Events Feed -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Correlated Incidents Table -->
+                <div class="bg-[#111827] border border-gray-800 rounded-xl shadow-xl overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <div class="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
+                            <div>
+                                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                    Correlated Incidents Table
+                                    <span id="incident-count-badge" class="text-xs bg-gray-800 text-gray-300 border border-gray-700 px-2 py-0.5 rounded-full mono">0</span>
+                                </h3>
+                                <p class="text-xs text-gray-400">Consolidated device incidents grouped by causality and topology</p>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-left text-sm text-gray-300">
+                                <thead class="bg-gray-900/80 text-xs uppercase text-gray-400 font-semibold border-b border-gray-800">
+                                    <tr>
+                                        <th scope="col" class="px-5 py-3.5">Incident ID</th>
+                                        <th scope="col" class="px-5 py-3.5">Device</th>
+                                        <th scope="col" class="px-4 py-3.5">Status</th>
+                                        <th scope="col" class="px-4 py-3.5">Priority</th>
+                                        <th scope="col" class="px-5 py-3.5">Probable Root Cause</th>
+                                        <th scope="col" class="px-4 py-3.5 text-center">Alerts</th>
+                                        <th scope="col" class="px-5 py-3.5 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="incidents-table-body" class="divide-y divide-gray-800/60">
+                                    <tr>
+                                        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                                            <div class="inline-flex items-center gap-2">
+                                                <svg class="animate-spin h-5 w-5 text-blue-500" viewBox="0 0 24 24" fill="none">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                                </svg>
+                                                Loading correlated incidents...
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Network Events Activity Feed -->
+                <div class="bg-[#111827] border border-gray-800 rounded-xl shadow-xl overflow-hidden">
+                    <div class="px-6 py-3.5 bg-gray-900/80 border-b border-gray-800 flex items-center justify-between">
+                        <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                            Recent Network Events Feed
+                        </h4>
+                        <span class="text-xs text-gray-400">Live alert stream logger</span>
+                    </div>
+
+                    <div class="overflow-x-auto custom-scrollbar max-h-48">
+                        <table class="w-full text-left text-xs text-gray-300">
+                            <thead class="bg-gray-950 text-gray-400 font-semibold border-b border-gray-800">
+                                <tr>
+                                    <th class="px-4 py-2.5">Timestamp</th>
+                                    <th class="px-4 py-2.5">Device</th>
+                                    <th class="px-4 py-2.5">Alert Type</th>
+                                    <th class="px-4 py-2.5">Severity</th>
+                                    <th class="px-4 py-2.5">Correlation Target</th>
+                                </tr>
+                            </thead>
+                            <tbody id="events-feed-body" class="divide-y divide-gray-800/60 font-mono">
+                                <tr>
+                                    <td colspan="5" class="px-4 py-6 text-center text-gray-500 italic">No simulated alerts triggered yet. Click "⚡ Simulate New Alert" to ingest live events.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Column: NetTriage AI Copilot Chat Panel -->
+            <div class="bg-[#111827] border border-gray-800 rounded-xl shadow-xl overflow-hidden flex flex-col h-[650px]">
+                
+                <!-- Copilot Header -->
+                <div class="px-5 py-4 bg-gray-900/90 border-b border-gray-800 flex items-center justify-between">
+                    <div class="flex items-center space-x-2.5">
+                        <div class="p-1.5 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/40">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
+                                NetTriage AI Copilot
+                            </h3>
+                            <p class="text-[11px] text-gray-400">NOC Assistant Engine</p>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded-full uppercase">
+                        AI Active
+                    </span>
+                </div>
+
+                <!-- Chat Message Stream (Scrollable) -->
+                <div id="chat-stream" class="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-3 text-xs bg-[#0d1322]">
+                    
+                    <!-- Bot Initial Welcome -->
+                    <div class="flex items-start space-x-2">
+                        <div class="w-7 h-7 rounded-lg bg-blue-600/20 border border-blue-500/40 text-blue-400 flex items-center justify-center flex-shrink-0 text-xs font-bold">
+                            AI
+                        </div>
+                        <div class="bg-gray-900 border border-gray-800 p-3 rounded-2xl rounded-tl-none text-gray-200 leading-relaxed shadow-sm max-w-[90%]">
+                            Hello NOC Operator! I am your <strong>NetTriage AI Copilot</strong>. Ask me anything about active incidents, root causes, or recommended next steps.
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Suggestion Pills -->
+                <div class="px-4 py-2.5 bg-gray-900/60 border-t border-gray-800/80 flex items-center gap-1.5 overflow-x-auto custom-scrollbar">
+                    <button onclick="sendQuickPrompt('What is the most critical incident?')" class="flex-shrink-0 text-[11px] bg-blue-950/60 hover:bg-blue-900 text-blue-300 border border-blue-800/50 px-2.5 py-1 rounded-full transition-all">
+                        ⚡ Most critical?
+                    </button>
+                    <button onclick="sendQuickPrompt('Why is INC-2026-001 critical?')" class="flex-shrink-0 text-[11px] bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 px-2.5 py-1 rounded-full transition-all">
+                        🔍 Why INC-001?
+                    </button>
+                    <button onclick="sendQuickPrompt('What should I do first for INC-2026-001?')" class="flex-shrink-0 text-[11px] bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/50 px-2.5 py-1 rounded-full transition-all">
+                        👉 First action?
+                    </button>
+                    <button onclick="sendQuickPrompt('Which alerts are related to core-router-dal-01?')" class="flex-shrink-0 text-[11px] bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 px-2.5 py-1 rounded-full transition-all">
+                        📡 Core router alerts?
+                    </button>
+                </div>
+
+                <!-- Chat Input Form -->
+                <form id="chat-form" onsubmit="handleChatSubmit(event)" class="p-3 bg-gray-900 border-t border-gray-800 flex items-center gap-2">
+                    <input type="text" id="chat-input" placeholder="Ask Copilot (e.g., 'What is the root cause?')..." required class="flex-1 bg-gray-950 border border-gray-800 text-gray-100 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-500">
+                    <button type="submit" id="chat-send-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs px-3.5 py-2 rounded-lg transition-colors flex items-center gap-1">
+                        <span>Send</span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </button>
+                </form>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Incident Details Modal / Slide-over Drawer -->
+    <div id="details-modal" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 transition-all">
+        <div class="bg-[#111827] border border-gray-800 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            
+            <!-- Modal Header -->
+            <div class="px-6 py-4 bg-gray-900/90 border-b border-gray-800 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <span id="modal-incident-id" class="text-lg font-bold text-white mono">INC-XXXX</span>
+                    <span id="modal-status-badge" class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">ACTIVE</span>
+                    <span id="modal-priority-badge" class="px-2.5 py-0.5 text-xs font-bold rounded-full">PRIORITY</span>
+                </div>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Content (Scrollable) -->
+            <div class="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+                
+                <!-- Metadata Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gray-900/60 border border-gray-800 p-4 rounded-xl">
+                        <span class="text-xs font-medium text-gray-400 uppercase tracking-wider block">Affected Device</span>
+                        <span id="modal-device" class="text-base font-semibold text-white mono mt-1 block">--</span>
+                    </div>
+
+                    <div class="bg-gray-900/60 border border-gray-800 p-4 rounded-xl">
+                        <span class="text-xs font-medium text-gray-400 uppercase tracking-wider block">Probable Root Cause</span>
+                        <span id="modal-root-cause" class="text-base font-semibold text-blue-400 mt-1 block">--</span>
+                    </div>
+                </div>
+
+                <!-- Next Best Action Banner (Immediate Recommended Step) -->
+                <div class="bg-gradient-to-r from-blue-950/80 via-blue-900/40 to-indigo-950/80 border border-blue-700/60 p-4 rounded-xl shadow-md">
+                    <div class="flex items-start gap-3">
+                        <div class="p-2 bg-blue-600/30 rounded-lg text-blue-400 mt-0.5">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold uppercase tracking-wider text-blue-300 block">Next Best Action (Immediate Priority)</span>
+                            <p id="modal-next-best-action" class="text-sm font-semibold text-white mt-1 leading-snug">--</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estimated Impact & Triage Diagnosis -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Estimated Impact Box -->
+                    <div class="bg-amber-950/20 border border-amber-900/40 p-4 rounded-xl">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            Estimated Network & Subscriber Impact
+                        </h4>
+                        <p id="modal-estimated-impact" class="text-xs text-gray-300 mt-2 leading-relaxed">--</p>
+                    </div>
+
+                    <!-- Root Cause Explanation Box -->
+                    <div class="bg-blue-950/20 border border-blue-900/40 p-4 rounded-xl">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Triage Explanation & Diagnosis
+                        </h4>
+                        <p id="modal-explanation" class="text-xs text-gray-300 mt-2 leading-relaxed">--</p>
+                    </div>
+                </div>
+
+                <!-- Automated Recommended Actions Checklist -->
+                <div class="bg-gray-900/80 border border-gray-800 p-5 rounded-xl space-y-3">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Automated Recommended Troubleshooting Actions
+                    </h4>
+                    <ul id="modal-recommended-actions-list" class="space-y-2 text-xs text-gray-300">
+                        <!-- Dynamic Recommended Actions Items -->
+                    </ul>
+                </div>
+
+                <!-- Related Alerts Section -->
+                <div>
+                    <h4 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                        Related Network Alerts
+                        <span id="modal-alerts-count" class="text-xs bg-gray-800 text-gray-300 border border-gray-700 px-2 py-0.5 rounded-full mono">0</span>
+                    </h4>
+
+                    <div class="border border-gray-800 rounded-xl overflow-hidden">
+                        <table class="w-full text-left text-xs text-gray-300">
+                            <thead class="bg-gray-900 text-gray-400 font-semibold border-b border-gray-800">
+                                <tr>
+                                    <th class="px-4 py-3">Alert ID</th>
+                                    <th class="px-4 py-3">Type</th>
+                                    <th class="px-4 py-3">Severity</th>
+                                    <th class="px-4 py-3">Timestamp</th>
+                                    <th class="px-4 py-3">Alert Message</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modal-alerts-body" class="divide-y divide-gray-800/60 bg-[#111827]">
+                                <!-- Dynamic Alert Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 bg-gray-900/90 border-t border-gray-800 flex justify-end">
+                <button onclick="closeModal()" class="px-4 py-2 text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 rounded-lg transition-colors">
+                    Close Details
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        let currentIncidents = [];
+        let recentEventsLog = [];
+
+        function getPriorityBadgeClass(priority) {
+            switch(priority ? priority.toUpperCase() : '') {
+                case 'CRITICAL':
+                    return 'bg-red-950/80 text-red-400 border border-red-800/60';
+                case 'HIGH':
+                    return 'bg-amber-950/80 text-amber-400 border border-amber-800/60';
+                case 'MEDIUM':
+                    return 'bg-yellow-950/80 text-yellow-400 border border-yellow-800/60';
+                case 'LOW':
+                    return 'bg-blue-950/80 text-blue-400 border border-blue-800/60';
+                default:
+                    return 'bg-gray-800 text-gray-400 border border-gray-700';
+            }
+        }
+
+        function getSeverityBadgeClass(severity) {
+            switch(severity ? severity.toUpperCase() : '') {
+                case 'CRITICAL':
+                    return 'bg-red-900/60 text-red-300 border border-red-700/50';
+                case 'HIGH':
+                    return 'bg-amber-900/60 text-amber-300 border border-amber-700/50';
+                case 'MEDIUM':
+                    return 'bg-yellow-900/60 text-yellow-300 border border-yellow-700/50';
+                case 'LOW':
+                    return 'bg-blue-900/60 text-blue-300 border border-blue-700/50';
+                default:
+                    return 'bg-gray-800 text-gray-400';
+            }
+        }
+
+        async function fetchIncidents() {
+            const tableBody = document.getElementById('incidents-table-body');
+            try {
+                const response = await fetch('/api/incidents');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    currentIncidents = data.incidents || [];
+                    renderSummaryStats(currentIncidents);
+                    renderIncidentsTable(currentIncidents);
+                    
+                    const now = new Date();
+                    document.getElementById('last-updated-time').innerText = now.toLocaleTimeString();
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-red-400">Failed to load incidents.</td></tr>`;
+                }
+            } catch (err) {
+                console.error('Error fetching incidents:', err);
+                tableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-red-400">Error connecting to server.</td></tr>`;
+            }
+        }
+
+        function renderSummaryStats(incidents) {
+            let critical = 0, high = 0, medium = 0, low = 0;
+            
+            incidents.forEach(inc => {
+                const p = (inc.priority || '').toUpperCase();
+                if (p === 'CRITICAL') critical++;
+                else if (p === 'HIGH') high++;
+                else if (p === 'MEDIUM') medium++;
+                else if (p === 'LOW') low++;
+            });
+
+            document.getElementById('stat-total').innerText = incidents.length;
+            document.getElementById('stat-critical').innerText = critical;
+            document.getElementById('stat-high').innerText = high;
+            document.getElementById('stat-medium').innerText = medium;
+            document.getElementById('stat-low').innerText = low;
+            document.getElementById('incident-count-badge').innerText = incidents.length;
+        }
+
+        function renderIncidentsTable(incidents) {
+            const tableBody = document.getElementById('incidents-table-body');
+            
+            if (!incidents || incidents.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-gray-500">No active network incidents detected.</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = incidents.map(inc => {
+                const alertCount = (inc.related_alerts || []).length;
+                const priorityClass = getPriorityBadgeClass(inc.priority);
+                const statusClass = inc.status === 'ACTIVE' 
+                    ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/60' 
+                    : 'bg-gray-800 text-gray-400 border border-gray-700';
+                
+                return `
+                    <tr class="hover:bg-[#1f293d] transition-colors border-b border-gray-800/40">
+                        <td class="px-5 py-4 font-semibold text-white mono text-xs">${inc.incident_id}</td>
+                        <td class="px-5 py-4 text-gray-200 font-medium mono text-xs">${inc.affected_device}</td>
+                        <td class="px-4 py-4">
+                            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full uppercase ${statusClass}">
+                                ${inc.status || 'ACTIVE'}
+                            </span>
+                        </td>
+                        <td class="px-4 py-4">
+                            <span class="px-2.5 py-1 text-[11px] font-bold rounded-full ${priorityClass}">
+                                ${inc.priority || 'UNKNOWN'}
+                            </span>
+                        </td>
+                        <td class="px-5 py-4 text-gray-300 font-medium text-xs">${inc.probable_root_cause || '--'}</td>
+                        <td class="px-4 py-4 text-center">
+                            <span class="px-2 py-0.5 text-xs bg-gray-800 text-gray-300 border border-gray-700 rounded-full mono font-semibold">
+                                ${alertCount}
+                            </span>
+                        </td>
+                        <td class="px-5 py-4 text-right">
+                            <button onclick="viewIncidentDetails('${inc.incident_id}')" class="text-xs bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/40 px-3 py-1.5 rounded-lg transition-all font-medium">
+                                Details
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function viewIncidentDetails(incidentId) {
+            const incident = currentIncidents.find(i => i.incident_id === incidentId);
+            if (!incident) return;
+
+            document.getElementById('modal-incident-id').innerText = incident.incident_id;
+            document.getElementById('modal-device').innerText = incident.affected_device;
+            document.getElementById('modal-root-cause').innerText = incident.probable_root_cause || '--';
+            document.getElementById('modal-explanation').innerText = incident.explanation || 'No explanation available.';
+            document.getElementById('modal-next-best-action').innerText = incident.next_best_action || 'Perform diagnostic check.';
+            document.getElementById('modal-estimated-impact').innerText = incident.estimated_impact || 'No impact details available.';
+
+            const sBadge = document.getElementById('modal-status-badge');
+            sBadge.innerText = incident.status || 'ACTIVE';
+
+            const pBadge = document.getElementById('modal-priority-badge');
+            pBadge.innerText = incident.priority || 'UNKNOWN';
+            pBadge.className = `px-2.5 py-1 text-xs font-bold rounded-full ${getPriorityBadgeClass(incident.priority)}`;
+
+            // Render Recommended Actions Checklist
+            const actionsList = document.getElementById('modal-recommended-actions-list');
+            const recActions = incident.recommended_actions || [];
+            if (recActions.length === 0) {
+                actionsList.innerHTML = `<li class="text-gray-500">No specific automated actions generated.</li>`;
+            } else {
+                actionsList.innerHTML = recActions.map((act, index) => `
+                    <li class="flex items-start gap-2 bg-gray-900/60 border border-gray-800/80 p-2.5 rounded-lg">
+                        <span class="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800/60 text-[10px] font-bold flex items-center justify-center mono">${index + 1}</span>
+                        <span class="text-gray-200 font-medium">${act}</span>
+                    </li>
+                `).join('');
+            }
+
+            // Render Related Alerts
+            const alerts = incident.related_alerts || [];
+            document.getElementById('modal-alerts-count').innerText = alerts.length;
+
+            const alertsBody = document.getElementById('modal-alerts-body');
+            alertsBody.innerHTML = alerts.map(a => {
+                const sevClass = getSeverityBadgeClass(a.severity);
+                return `
+                    <tr class="hover:bg-gray-900/50 transition-colors border-b border-gray-800/40">
+                        <td class="px-4 py-3 font-semibold text-white mono">${a.id}</td>
+                        <td class="px-4 py-3 font-medium text-blue-400 mono">${a.type}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-0.5 text-[11px] font-bold rounded ${sevClass}">
+                                ${a.severity}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-gray-400 mono text-[11px]">${a.timestamp}</td>
+                        <td class="px-4 py-3 text-gray-300 text-xs">${a.message}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('details-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('details-modal').classList.add('hidden');
+        }
+
+        // Close modal on Escape key press
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // ---------------- Real-Time Alert Simulation ----------------
+        async function simulateNewAlert() {
+            try {
+                showToast("⚡ Ingesting simulated network alert...", "info");
+                
+                const response = await fetch('/api/alerts/simulate', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    const alert = data.simulated_alert;
+                    const inc = data.correlated_incident;
+                    
+                    // Show Toast Notification
+                    showToast(`⚡ Alert ${alert.id} (${alert.type}) ingested! Correlated to ${inc ? inc.incident_id : 'New Cluster'} (${inc ? inc.priority : alert.severity})`, "success");
+
+                    // Add to Recent Events Activity Feed
+                    addRecentEvent(alert, inc ? inc.incident_id : 'INGESTED');
+
+                    // Refresh Dashboard Data
+                    await fetchIncidents();
+
+                    // Notify Copilot Stream
+                    notifyCopilotOfSimulatedAlert(alert, inc);
+                } else {
+                    showToast("Failed to simulate alert", "error");
+                }
+            } catch (err) {
+                console.error("Simulation error:", err);
+                showToast("Error connecting to alert simulator", "error");
+            }
+        }
+
+        function addRecentEvent(alert, incidentId) {
+            recentEventsLog.unshift({ alert, incidentId });
+            if (recentEventsLog.length > 8) recentEventsLog.pop();
+
+            const feedBody = document.getElementById('events-feed-body');
+            feedBody.innerHTML = recentEventsLog.map(item => {
+                const a = item.alert;
+                const sevClass = getSeverityBadgeClass(a.severity);
+                return `
+                    <tr class="hover:bg-gray-900/50 transition-colors">
+                        <td class="px-4 py-2 text-gray-400 text-[11px]">${a.timestamp}</td>
+                        <td class="px-4 py-2 text-white font-semibold text-xs">${a.device}</td>
+                        <td class="px-4 py-2 text-blue-400 font-bold text-xs">${a.type}</td>
+                        <td class="px-4 py-2">
+                            <span class="px-1.5 py-0.5 text-[10px] font-bold rounded ${sevClass}">${a.severity}</span>
+                        </td>
+                        <td class="px-4 py-2 text-emerald-400 text-xs font-semibold">Correlated to ${item.incidentId}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function notifyCopilotOfSimulatedAlert(alert, inc) {
+            const chatStream = document.getElementById('chat-stream');
+            const sysMsgHTML = `
+                <div class="flex items-start space-x-2">
+                    <div class="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center flex-shrink-0 text-xs font-bold">
+                        ⚡
+                    </div>
+                    <div class="bg-amber-950/30 border border-amber-800/50 p-3 rounded-2xl rounded-tl-none text-amber-200 leading-relaxed shadow-sm max-w-[90%] text-xs">
+                        <strong>Simulated Alert Ingested:</strong> <code class="bg-gray-950 px-1 py-0.5 rounded text-amber-300">${alert.id}</code> (<strong>${alert.type}</strong> on <code>${alert.device}</code>).<br>
+                        • <strong>Status</strong>: Correlated to active incident <strong class="text-white">${inc ? inc.incident_id : 'NEW'}</strong> (${inc ? inc.priority : alert.severity}).<br>
+                        • <strong>Next Action</strong>: ${inc ? inc.next_best_action : 'Investigate alert logs.'}
+                    </div>
+                </div>
+            `;
+            chatStream.insertAdjacentHTML('beforeend', sysMsgHTML);
+            chatStream.scrollTop = chatStream.scrollHeight;
+        }
+
+        function showToast(message, type = "info") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let colorClasses = "bg-blue-900/90 text-blue-200 border-blue-700/60";
+            if (type === "success") colorClasses = "bg-emerald-900/90 text-emerald-200 border-emerald-700/60";
+            if (type === "error") colorClasses = "bg-red-900/90 text-red-200 border-red-700/60";
+
+            toast.className = `px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md text-xs font-semibold flex items-center gap-2 transition-all transform translate-y-2 opacity-0 pointer-events-auto ${colorClasses}`;
+            toast.innerHTML = `<span>${message}</span>`;
+            
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // ---------------- Copilot Chat Functions ----------------
+        function sendQuickPrompt(promptText) {
+            document.getElementById('chat-input').value = promptText;
+            document.getElementById('chat-form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        }
+
+        async function handleChatSubmit(e) {
+            e.preventDefault();
+            const inputEl = document.getElementById('chat-input');
+            const userMsg = inputEl.value.strip ? inputEl.value.strip() : inputEl.value.trim();
+            if (!userMsg) return;
+
+            inputEl.value = '';
+            const chatStream = document.getElementById('chat-stream');
+
+            // Append User Message
+            const userMsgHTML = `
+                <div class="flex items-start justify-end space-x-2">
+                    <div class="bg-blue-600 text-white p-3 rounded-2xl rounded-tr-none max-w-[85%] leading-relaxed shadow-sm">
+                        ${escapeHtml(userMsg)}
+                    </div>
+                </div>
+            `;
+            chatStream.insertAdjacentHTML('beforeend', userMsgHTML);
+            chatStream.scrollTop = chatStream.scrollHeight;
+
+            // Append Loading Indicator
+            const loadingId = 'loading-' + Date.now();
+            const loadingHTML = `
+                <div id="${loadingId}" class="flex items-start space-x-2">
+                    <div class="w-7 h-7 rounded-lg bg-blue-600/20 border border-blue-500/40 text-blue-400 flex items-center justify-center flex-shrink-0 text-xs font-bold">
+                        AI
+                    </div>
+                    <div class="bg-gray-900 border border-gray-800 p-3 rounded-2xl rounded-tl-none text-gray-400 italic">
+                        Analyzing incident graph...
+                    </div>
+                </div>
+            `;
+            chatStream.insertAdjacentHTML('beforeend', loadingHTML);
+            chatStream.scrollTop = chatStream.scrollHeight;
+
+            try {
+                const response = await fetch('/api/copilot/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: userMsg })
+                });
+
+                const data = await response.json();
+                document.getElementById(loadingId)?.remove();
+
+                if (data.status === 'success' && data.response) {
+                    const respObj = data.response;
+                    let formattedAnswer = formatMarkdown(respObj.answer || 'No response.');
+                    
+                    let extraActionHTML = '';
+                    if (respObj.next_action) {
+                        extraActionHTML = `
+                            <div class="mt-2.5 pt-2 border-t border-gray-800/80 text-[11px] text-blue-300 flex items-start gap-1.5">
+                                <span class="font-bold uppercase text-blue-400 flex-shrink-0">👉 Next Action:</span>
+                                <span>${escapeHtml(respObj.next_action)}</span>
+                            </div>
+                        `;
+                    }
+
+                    const botMsgHTML = `
+                        <div class="flex items-start space-x-2">
+                            <div class="w-7 h-7 rounded-lg bg-blue-600/20 border border-blue-500/40 text-blue-400 flex items-center justify-center flex-shrink-0 text-xs font-bold">
+                                AI
+                            </div>
+                            <div class="bg-gray-900 border border-gray-800 p-3 rounded-2xl rounded-tl-none text-gray-200 leading-relaxed shadow-sm max-w-[90%]">
+                                <div>${formattedAnswer}</div>
+                                ${extraActionHTML}
+                            </div>
+                        </div>
+                    `;
+                    chatStream.insertAdjacentHTML('beforeend', botMsgHTML);
+                } else {
+                    chatStream.insertAdjacentHTML('beforeend', `<div class="text-red-400 text-xs">Copilot encounter an issue. Please try again.</div>`);
+                }
+            } catch (err) {
+                console.error('Copilot Chat Error:', err);
+                document.getElementById(loadingId)?.remove();
+                chatStream.insertAdjacentHTML('beforeend', `<div class="text-red-400 text-xs">Error connecting to Copilot engine.</div>`);
+            }
+
+            chatStream.scrollTop = chatStream.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.innerText = text;
+            return div.innerHTML;
+        }
+
+        function formatMarkdown(text) {
+            let formatted = escapeHtml(text);
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
+            formatted = formatted.replace(/`(.*?)`/g, '<code class="bg-gray-950 px-1 py-0.5 rounded text-blue-300 mono text-[11px]">$1</code>');
+            formatted = formatted.replace(/\n/g, '<br>');
+            return formatted;
+        }
+
+        // Initial Fetch on Load
+        document.addEventListener('DOMContentLoaded', fetchIncidents);
+    </script>
+</body>
+</html>

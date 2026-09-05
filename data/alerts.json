@@ -1,0 +1,122 @@
+[
+  {
+    "id": "ALT-2026-001",
+    "device": "core-router-dal-01",
+    "type": "LINK_DOWN",
+    "message": "Interface TenGigE0/0/0/1 down: Physical link failure detected on Dallas-Austin DWDM trunk line.",
+    "severity": "CRITICAL",
+    "timestamp": "2026-09-05T10:30:15Z"
+  },
+  {
+    "id": "ALT-2026-002",
+    "device": "core-router-dal-01",
+    "type": "DEVICE_UNREACHABLE",
+    "message": "Management heartbeat ping timeout on core-router-dal-01 following link down state.",
+    "severity": "CRITICAL",
+    "timestamp": "2026-09-05T10:30:45Z"
+  },
+  {
+    "id": "ALT-2026-003",
+    "device": "gNodeB-tower-austin-104",
+    "type": "DEVICE_UNREACHABLE",
+    "message": "Ping timeout on primary management IP 10.240.12.104. Site power failure alarm triggered.",
+    "severity": "CRITICAL",
+    "timestamp": "2026-09-05T10:31:00Z"
+  },
+  {
+    "id": "ALT-2026-004",
+    "device": "microwave-link-tx-09",
+    "type": "HIGH_LATENCY",
+    "message": "Round-trip delay spiked to 480ms on microwave backhaul trunk (threshold: 50ms). Heavy packet loss reported.",
+    "severity": "HIGH",
+    "timestamp": "2026-09-05T10:32:45Z"
+  },
+  {
+    "id": "ALT-2026-005",
+    "device": "bng-gateway-houston-02",
+    "type": "AUTH_FAILURE",
+    "message": "AAA RADIUS server unreachable. 450 subscriber PPPoE authentication requests rejected in 60s.",
+    "severity": "HIGH",
+    "timestamp": "2026-09-05T10:34:10Z"
+  },
+  {
+    "id": "ALT-2026-006",
+    "device": "bng-gateway-houston-02",
+    "type": "AUTH_FAILURE",
+    "message": "Secondary RADIUS gateway challenge timeout. 300 additional authentication attempts rejected.",
+    "severity": "HIGH",
+    "timestamp": "2026-09-05T10:34:50Z"
+  },
+  {
+    "id": "ALT-2026-007",
+    "device": "edge-switch-dal-04",
+    "type": "LINK_DOWN",
+    "message": "Port GigabitEthernet1/0/24 link state DOWN (Loss of Signal). Fiber optic module RX low power.",
+    "severity": "MEDIUM",
+    "timestamp": "2026-09-05T10:35:00Z"
+  },
+  {
+    "id": "ALT-2026-008",
+    "device": "pe-router-san-01",
+    "type": "HIGH_LATENCY",
+    "message": "BGP peer 198.51.100.4 latency increased to 310ms. Potential upstream transit provider degradation.",
+    "severity": "MEDIUM",
+    "timestamp": "2026-09-05T10:36:20Z"
+  },
+  {
+    "id": "ALT-2026-009",
+    "device": "pe-router-san-01",
+    "type": "LINK_DOWN",
+    "message": "Primary BGP peering interface TenGigE0/1/0/0 transitioned to DOWN state due to hold timer expiration.",
+    "severity": "HIGH",
+    "timestamp": "2026-09-05T10:37:00Z"
+  },
+  {
+    "id": "ALT-2026-010",
+    "device": "5g-upf-central-01",
+    "type": "DEVICE_UNREACHABLE",
+    "message": "Heartbeat failure on User Plane Function node 5g-upf-central-01 via N3 interface.",
+    "severity": "CRITICAL",
+    "timestamp": "2026-09-05T10:37:05Z"
+  },
+  {
+    "id": "ALT-2026-011",
+    "device": "tacacs-auth-dal-01",
+    "type": "AUTH_FAILURE",
+    "message": "TACACS+ administrator login failure count exceeded limit (15 failed attempts from 192.168.50.44).",
+    "severity": "LOW",
+    "timestamp": "2026-09-05T10:40:00Z"
+  },
+  {
+    "id": "ALT-2026-012",
+    "device": "pe-router-san-01",
+    "type": "AUTH_FAILURE",
+    "message": "SSH console login failure limit reached for operator admin from 10.100.4.12.",
+    "severity": "MEDIUM",
+    "timestamp": "2026-09-05T06:23:18Z"
+  },
+  {
+    "id": "ALT-2026-013",
+    "device": "5g-upf-central-01",
+    "type": "DEVICE_UNREACHABLE",
+    "message": "GTP-U tunnel heartbeat loss reported on N4 interface to 5G Control Plane.",
+    "severity": "CRITICAL",
+    "timestamp": "2026-09-05T06:25:04Z"
+  },
+  {
+    "id": "ALT-2026-014",
+    "device": "edge-switch-dal-04",
+    "type": "HIGH_LATENCY",
+    "message": "Broadcast storm control suppression activated on edge port 18.",
+    "severity": "MEDIUM",
+    "timestamp": "2026-09-05T06:25:44Z"
+  },
+  {
+    "id": "ALT-2026-015",
+    "device": "5g-upf-central-01",
+    "type": "DEVICE_UNREACHABLE",
+    "message": "GTP-U tunnel heartbeat loss reported on N4 interface to 5G Control Plane.",
+    "severity": "CRITICAL",
+    "timestamp": "2026-09-05T06:25:52Z"
+  }
+]
